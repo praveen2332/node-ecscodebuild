@@ -1,6 +1,4 @@
-FROM node:14
-WORKDIR /usr/src/app
-RUN npm install
-COPY . .
-EXPOSE 3000
-CMD [ "node", "index.js" ]
+FROM nginx:latest
+COPY default.conf /etc/nginx/conf.d/default.conf
+COPY index.html /usr/share/nginx/html
+
