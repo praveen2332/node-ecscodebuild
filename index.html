@@ -1,21 +1,60 @@
 ecs-codebuild- taskoverrides......?////vvvvvvvvvvvvvvvvvvvvvvvvvvvvzzzzzzzzzzzzzzzzzzzzzzzxxxxxxxxxxxxxxxxxxxxxxx
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-sssssssssssssssssssssssssssssss
-dddddddddddddddddddddddddddddd
-fffffffffffffffffffffffffffffffffff
-ggggggggggggggggggggggggggggggg
-hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhjj
+Create the build config file. In your project root directory, create a file named cloudbuild.yaml. This is your Cloud Build config file.
+
+Add the steps field. The steps section in the build config file contains the build steps that you want Cloud Build to perform.
 
 
+steps:
+Add the first step. Under steps:, add a name field and point it to a container image to execute your task. Cloud Build and its developer community provides several container images with common tools and languages installed. You can use any of these images (also called Cloud Builders) or any publicly available image in a build step. For information on different types of container images you can use in a build step, see Cloud Builders.
+
+The following snippet shows a build step with a docker builder gcr.io/cloud-builders/docker, which is a container image running Docker.
 
 
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+Add step arguments. The args field of a step takes a list of arguments and passes them to the builder referenced by the name field. If the builder in the name field has an entrypoint, args in the list are used to access that entrypoint. If the builder in the name field does not have an entrypoint, the first element in args is used as the entrypoint.
+
+In the following example:
+
+build is the entrypoint to the Docker cloud builder.
+-t is the Docker tag.
+us-central1-docker.pkg.dev/${PROJECT_ID}/my-docker-repo/my-image is the name of the image to be built in Artifact Registry. The build step uses the default substitution for project ID, therefore this value is automatically substituted at build time.
+. is the location of the source code, which indicates the source code is in the current working directory.
 
 
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'us-central1-docker.pkg.dev/${PROJECT_ID}/my-docker-repo/my-image', '.']
+Add more steps. You can add any number of build steps to your build config file by including additional name fields and pointing them to cloud builders.
+
+The following snippet includes two more steps to the build config file:
+
+a docker build step to invoke the docker push command to push the image build in the previous step to Artifact Registry.
+a build step for the Google Cloud SDK command with the gcloud entrypoint specified, which creates a Compute Engine instance from the container image in Artifact Registry. The env field is included to specify the Compute Engine zone and region.
 
 
-jjjjjjjjjjjjjjjjjjjjjjjjjjj
-kkkkkkkkkkkkkkkkkkk
-llllllllllllllllllll
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;------------------------------=======================================------------------------------------------------------=======================================--------
--================================
+ - name: 'gcr.io/cloud-builders/docker'
+   args: ['push', 'us-central1-docker.pkg.dev/${PROJECT_ID}/my-docker-repo/my-image']
+ - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+   entrypoint: 'gcloud'
+   args: ['compute', 'instances', 'create-with-container', 'my-vm-name', '--container-image', 'us-central1-docker.pkg.dev/${PROJECT_ID}/my-docker-repo/my-image']
+   env:
+   - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+   - 'CLOUDSDK_COMPUTE_ZONE=us-central1-a'
+Include additional build configuration fields. You can configure the build further by including fields such as machineType, tags, or timeout. For the complete list of fields you can include in the build config file see Build Configuration Overview.
+
+In the following example, the gcr.io/google.com/cloudsdktool/cloud-sdk build step times out after 240 seconds.
+
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    timeout: 240s
+    args: ['compute', 'instances', 'create-with-container', 'my-vm-name', '--container-image', 'us-central1-docker.pkg.dev/${PROJECT_ID}/my-docker-repo/my-image']
+    env:
+    - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+    - 'CLOUDSDK_COMPUTE_ZONE=us-central1-a'
+See the following snippet for the complete example of a basic build config file:
+
+View on GitHub
+
 
